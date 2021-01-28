@@ -52,7 +52,9 @@ void loop(){
 
   if(serial_complete){
     serial_complete = false;
+    
     prosesData();
+    
     serial_buff = "";
   }
 }
@@ -81,8 +83,11 @@ void prosesData(){
 
   JsonObject& root = JSONBuffer.parseObject(serial_buff);
   if(root.success()){
-    if(root["op"] == "data"){
+    const char * op = root["op"];
+    
+    if(strcmp(op, "data") == 0){
       serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, DEC) + ",\"on\":" + String(relay_state, DEC) + "}";
+      
     }
   }
 }
