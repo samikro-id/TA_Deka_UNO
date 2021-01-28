@@ -5,23 +5,26 @@
 
 #define RELAY1_PIN      8
 #define RELAY2_PIN      9
+bool relay_state        = false;
 
 uint32_t led_time;
 bool led_state          = false;
 
+#define VOLT_FULL       13    // V
+#define VOLT_EMPTY      10    // V      
 float volt;
-double arus;
-int sensitivitas        = 185; //tegantung sensor arus yang digunakan, yang ini 5A
-int teganganoffset      = 2.5;
-float teganganbawah     = 10;
-float teganganatas      = 13;
 
-uint16_t energy = 0;
+#define ARUS_SENSITIVITY  185   // mV  tegantung sensor arus yang digunakan, yang ini 5A
+#define ARUS_OFFSET       2.5   // V
+double arus;
+
+#define ENERGY_FULL     48
+#define ENERGY_EMPTY    0
+float energy = 0;
 
 uint8_t persen;
-bool relay_state        = false;
 
-uint32_t previous_time;
+uint32_t sensor_time;
 
 #define SERIAL_BAUD     115200
 #define SERIAL_LEN      1000
@@ -29,20 +32,20 @@ String serial_buff;
 bool serial_complete    = false;
 
 void setup(){
-  delay(1000);
+  delay(100);
   Serial.begin(SERIAL_BAUD);               
   initIo();
 
   serial_buff.reserve(SERIAL_LEN);
   
-  previous_time = millis();
+  sensor_time = millis();
   led_time = millis();
 }
 
 void loop(){
-  if((millis() - previous_time) > 200){
+  if((millis() - sensor_time) > 200){
     bacaSensor();
-    previous_time = millis();
+    sensor_time = millis();
   }
 
   if((millis() - led_time) > 200){
@@ -62,20 +65,24 @@ void loop(){
 void bacaSensor(){
   /* BACA TEGANGAN */
   uint16_t voltRaw = analogRead(TEGANGAN_PIN);      
-  float pinvolt = (float) (5 * voltRaw) / 1023;   
+  float pinvolt = (float) (5 * voltRaw) / 1024;   
   volt = (float) pinvolt * 5;
 
-  /* BACA arus */
-  uint16_t arusRaw = analogRead(ARUS_PIN);  
-  double pinArus = 5000 * (arusRaw / 1024.0);     
-  arus = (float) ((pinArus - teganganoffset) / sensitivitas);
-
-  if(volt > teganganbawah && volt < teganganatas ){
-    persen = ((volt - teganganbawah) / (teganganatas - teganganbawah)) * 100;
+  /* HITUNG PERSEN */
+  if(volt > VOLT_EMPTY && volt < VOLT_FULL ){
+    persen = ((volt - VOLT_EMPTY) / (VOLT_FULL - VOLT_EMPTY)) * 100;
   }
   else{
     persen = 0;
   }
+
+  /* BACA arus */
+  uint16_t arusRaw = analogRead(ARUS_PIN);
+  double pinArus = 5000 * (arusRaw / 1024.0);
+  arus = (float) ((pinArus - ARUS_OFFSET) / ARUS_SENSITIVITY);
+
+  /* HITUNG ENERGY */
+  energy += float((volt * arus) / 3600)         // 3600 detik dalam 1 jam
 }
 
 void prosesData(){
@@ -86,9 +93,28 @@ void prosesData(){
     const char * op = root["op"];
     
     if(strcmp(op, "data") == 0){
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, DEC) + ",\"on\":" + String(relay_state, DEC) + "}";
-      
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      Serial.print(serial_buff);
     }
+    else if(strcmp(op, "on") == 0){
+      relayState(root["state"]);
+
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      Serial.print(serial_buff);
+    }
+    else if(strcmp(op, "wh") == 0){
+      const char * set = root["set"];
+      if(strcmp(set, "full") == 0){
+        energy = ENERGY_FULL;
+      }
+      else if(strcmp(set, "empty") == 0){
+        energy = ENERGY_EMPTY;
+      }
+
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      Serial.print(serial_buff);
+    }
+
   }
 }
 
@@ -104,6 +130,13 @@ void serialEvent(){
       serial_buff += inChar;
     }
   }
+}
+
+/****** Relay function*******/
+void relayState(bool state){
+  if(state){  digitalWrite(RELAY1_PIN, HIGH);  }
+  else{       digitalWrite(RELAY1_PIN, LOW);   }
+  relay_state = state;
 }
 
 /****** LED function ******/
@@ -124,7 +157,6 @@ void toggleLed(){
 }
 
 /****** Initialize *******/
-
 void initIo(){
   pinMode(RELAY1_PIN, OUTPUT);
   digitalWrite(RELAY1_PIN, HIGH);
