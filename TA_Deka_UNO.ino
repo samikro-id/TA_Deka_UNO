@@ -83,6 +83,9 @@ void bacaSensor(){
 
   /* HITUNG ENERGY */
   energy += float((volt * arus) / 3600)         // 3600 detik dalam 1 jam
+  if(energy > ENERGY_FULL){    energy = ENERGY_FULL;  }
+  if(energy <= ENERGY_EMPTY){  energy = ENERGY_EMPTY; }
+
 }
 
 void prosesData(){
@@ -114,7 +117,6 @@ void prosesData(){
       serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
       Serial.print(serial_buff);
     }
-
   }
 }
 
