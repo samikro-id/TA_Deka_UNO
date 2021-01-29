@@ -171,8 +171,8 @@ void prosesData(){
 
         const char *get_clock = root["time"];
 
-        index = String(get_clock).indexOf(':');  //finds location of first ,
-        set_time.hour = String(get_clock).substring(0, index).toInt();   //captures first data String
+        index = String(get_clock).indexOf(':');  
+        set_time.hour = String(get_clock).substring(0, index).toInt();   
         set_time.minute = String(get_clock).substring(index+1).toInt();
 
         setClock(set_time);
