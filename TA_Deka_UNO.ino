@@ -167,16 +167,20 @@ void prosesData(){
       bool set = root["set"];
       if(set){
         struct time set_time;
+        uint8_t index;
 
-        set_time.hour = root["hour"];
-        set_time.minute = root["minute"];
-        set_time.second = 0;
+        const char *get_clock = root["time"];
+
+        index = String(get_clock).indexOf(':');  //finds location of first ,
+        set_time.hour = String(get_clock).substring(0, index).toInt();   //captures first data String
+        set_time.minute = String(get_clock).substring(index+1).toInt();
 
         setClock(set_time);
         time_now = getClock();
 
         serial_buff = "";
         serial_buff = "{\"op\":\"clock\",\"time\":\"" + String(time_now.hour, DEC) + ":" + String(time_now.minute, DEC) + "\"}";
+        // serial_buff = "{\"op\":\"clock\",\"time\":\"" + String(set_time.hour, DEC) + ":" + String(set_time.minute, DEC) + "\"}";
 
         Serial.print(serial_buff);
       }else{
@@ -190,17 +194,26 @@ void prosesData(){
       bool set = root["set"];
       if(set){
         struct schedule set_schedule;
+        uint8_t index;
         uint8_t id;
 
-        set_schedule.start_hour = root["start_hour"];
-        set_schedule.start_minute = root["start_minute"];
-        set_schedule.finish_hour = root["finish_hour"];
-        set_schedule.finish_minute = root["finish_minute"];
+        const char *get_start = root["start"];
+        index = String(get_start).indexOf(':');
+        set_schedule.start_hour = String(get_start).substring(0, index).toInt();
+        set_schedule.start_minute = String(get_start).substring(index+1).toInt();
+
+        const char *get_finish = root["finish"];
+        index = String(get_finish).indexOf(':');
+        set_schedule.finish_hour = String(get_finish).substring(0, index).toInt();
+        set_schedule.finish_minute = String(get_finish).substring(index+1).toInt();
 
         id = setSchedule(set_schedule);
 
         serial_buff = "";
-        serial_buff = "{\"op\":\"schedule\",\"id\":" + String(id, DEC) + "}"; 
+        serial_buff = "{\"op\":\"schedule\",\"id\":" + String(id, DEC) + "}";
+        // serial_buff = "{\"op\":\"schedule\",\"start\":\"" + String(set_schedule.start_hour, DEC) + ":" + String(set_schedule.start_minute, DEC) + "\"}";
+        // Serial.print(serial_buff);
+        // serial_buff = "{\"op\":\"schedule\",\"finish\":\"" + String(set_schedule.finish_hour, DEC) + ":" + String(set_schedule.finish_minute, DEC) + "\"}";
         
         Serial.print(serial_buff);
       }else{
