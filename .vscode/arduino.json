@@ -1,6 +1,5 @@
 {
-    "board": "arduino:avr:mega",
-    "port": "COM3",
-    "sketch": "TA_Deka_UNO.ino",
-    "configuration": "cpu=atmega2560"
+    "board": "arduino:avr:uno",
+    "port": "COM5",
+    "sketch": "TA_Deka_UNO.ino"
 }

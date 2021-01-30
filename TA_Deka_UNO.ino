@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <DS3231.h>         //  DS3231 Andrew Wickert V1.0.2
 
-#define SOFTWARE_VERSI  1
+#define SOFTWARE_VERSI  2
 #define EEPROM_ADDRESS  0x57
 
 #define TEGANGAN_PIN    A0
@@ -41,8 +41,8 @@ uint32_t time_time;
 bool h12;
 bool PM;
 
-#define SERIAL_BAUD     115200
-#define SERIAL_LEN      1000
+#define SERIAL_BAUD     9600
+#define SERIAL_LEN      400
 String serial_buff;
 bool serial_complete    = false;
 
@@ -68,10 +68,10 @@ void setup(){
   Wire.begin();      
   initIo();
 
-  // if(!checkSoftwareVersi()){
-  //   setSoftwareVersi();
-  //   resetScheduleAll();
-  // }
+  if(!checkSoftwareVersi()){
+    setSoftwareVersi();
+    resetScheduleAll();
+  }
   
   serial_buff.reserve(SERIAL_LEN);
   
@@ -100,10 +100,9 @@ void loop(){
   }
 
   if(serial_complete){
-    serial_complete = false;
-    
     prosesData();
     
+    serial_complete = false;
     serial_buff = "";
   }
 }
@@ -142,13 +141,21 @@ void prosesData(){
     const char * op = root["op"];
     
     if(strcmp(op, "data") == 0){
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      serial_buff = "";
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
+      serial_buff += (relay_state == true)?"true":"false";
+      serial_buff += "}";
+
       Serial.print(serial_buff);
     }
     else if(strcmp(op, "on") == 0){
       relayState(root["state"]);
 
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      serial_buff = "";
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
+      serial_buff += (relay_state == true)?"true":"false";
+      serial_buff += "}";
+      
       Serial.print(serial_buff);
     }
     else if(strcmp(op, "wh") == 0){
@@ -160,7 +167,11 @@ void prosesData(){
         energy = ENERGY_EMPTY;
       }
 
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":" + String(relay_state, DEC) + "}";
+      serial_buff = "";
+      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
+      serial_buff += (relay_state == true)?"true":"false";
+      serial_buff += "}";
+
       Serial.print(serial_buff);
     }
     else if(strcmp(op, "clock") == 0){
@@ -223,36 +234,37 @@ void prosesData(){
         serial_buff = "[";
 
         /*** get first schedule ****/
-        for(uint8_t i=1; i<33; i++){
+        for(uint8_t i=1; i<11; i++){
           struct get_schedule first_schedule;
 
           last_id = i;
 
           first_schedule = getSchedule(i);
           if(first_schedule.success){
-            serial_buff += "{\"id\":" + String(i, DEC) 
-                          + ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC) 
-                          + "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC)
-                          + "\"}";
+            serial_buff += "{\"id\":"; 
+            serial_buff += String(i); 
+            serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
+            serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
+            serial_buff += "\"}";
             
             break;
           }
         }
 
-        for(uint8_t i=last_id+1; i<33; i++){
+        for(uint8_t i=last_id+1; i<11; i++){
           struct get_schedule first_schedule;
 
-          first_schedule = getSchedule(i);
           if(first_schedule.success){
-            serial_buff += ",{\"id\":" + String(i, DEC) 
-                          + ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC) 
-                          + "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC)
-                          + "\"}";
+            Serial.println(i);
+            serial_buff += "{\"id\":" + String(i, DEC); 
+            serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
+            serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
+            serial_buff += "\"}";
           }
         }
 
         serial_buff += "]";
-
+        Serial.println(serial_buff.length());
         Serial.print(serial_buff);
         serial_buff = "";
       }
@@ -320,8 +332,8 @@ byte i2c_eeprom_read_byte( int deviceaddress, unsigned int eeaddress ) {
 void checkSchedule(){
   struct get_schedule schedule_now;
 
-  for(uint8_t i=0; i<32; i++){
-    schedule_now = getSchedule(i+1);
+  for(uint8_t i=1; i<11; i++){
+    schedule_now = getSchedule(i);
     if(schedule_now.success){
       if(schedule_now.start_hour == time_now.hour && schedule_now.start_minute == time_now.minute){
         relayState(true);
@@ -344,7 +356,7 @@ void resetScheduleAll(){
 struct get_schedule getSchedule(uint8_t id){
   struct get_schedule get_instance;
   uint32_t flag_check = 0x00000001;
-  uint32_t flag;
+  uint32_t flag = 0;
 
   get_instance.success = false;
 
@@ -372,20 +384,21 @@ uint8_t setSchedule(struct schedule set_schedule){
   uint32_t flag;
   
   flag = getScheduleFlag();
-  for(uint8_t i=0; i<32; i++){
+  for(uint8_t i=1; i<11; i++){
     if((flag & flag_begin) == 0){
       
       /*** set new flag ***/
       flag |= flag_begin;
       setScheduleFlag(flag);
 
-      i2c_eeprom_write_byte(EEPROM_ADDRESS, 5 + (4 * i), set_schedule.start_hour);
-      i2c_eeprom_write_byte(EEPROM_ADDRESS, 6 + (4 * i), set_schedule.start_minute);
+      i2c_eeprom_write_byte(EEPROM_ADDRESS, 5 + (4 * (i-1)), set_schedule.start_hour);
+      i2c_eeprom_write_byte(EEPROM_ADDRESS, 6 + (4 * (i-1)), set_schedule.start_minute);
 
-      i2c_eeprom_write_byte(EEPROM_ADDRESS, 7 + (4 * i), set_schedule.finish_hour);
-      i2c_eeprom_write_byte(EEPROM_ADDRESS, 8 + (4 * i), set_schedule.finish_minute);
+      i2c_eeprom_write_byte(EEPROM_ADDRESS, 7 + (4 * (i-1)), set_schedule.finish_hour);
+      i2c_eeprom_write_byte(EEPROM_ADDRESS, 8 + (4 * (i-1)), set_schedule.finish_minute);
 
-      schedule_id = i + 1;
+      schedule_id = i;
+      break;
     }
 
     flag_begin <<=1;
@@ -432,7 +445,9 @@ void serialEvent(){
     }else if(inChar == '\r'){
       // do nothing
     }else{
-      serial_buff += inChar;
+      if(!serial_complete){
+        serial_buff += inChar;
+      }
     }
   }
 }
