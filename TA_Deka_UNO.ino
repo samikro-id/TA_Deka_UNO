@@ -93,6 +93,8 @@ void loop(){
 
   if((millis() - time_time) > 200){
     time_now = getClock();
+    
+    time_time = millis();
   }
 
   if(time_now.second == 0){
@@ -141,42 +143,56 @@ void prosesData(){
     const char * op = root["op"];
     
     if(strcmp(op, "data") == 0){
-      serial_buff = "";
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
-      serial_buff += (relay_state == true)?"true":"false";
-      serial_buff += "}";
+      const char * cmd = root["cmd"];
 
-      Serial.print(serial_buff);
+      if(strcmp(cmd, "get") == 0){
+        serial_buff = "";
+        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += "}";
+
+        Serial.print(serial_buff);
+      }
     }
-    else if(strcmp(op, "on") == 0){
-      relayState(root["state"]);
+    else if(strcmp(op, "control") == 0){
+      const char * cmd = root["cmd"];
 
-      serial_buff = "";
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
-      serial_buff += (relay_state == true)?"true":"false";
-      serial_buff += "}";
-      
-      Serial.print(serial_buff);
+      if(strcmp(cmd, "set") == 0){
+        relayState(root["state"]);
+
+        serial_buff = "";
+        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += "}";
+        
+        Serial.print(serial_buff);
+      }
     }
     else if(strcmp(op, "wh") == 0){
-      const char * set = root["set"];
-      if(strcmp(set, "full") == 0){
-        energy = ENERGY_FULL;
-      }
-      else if(strcmp(set, "empty") == 0){
-        energy = ENERGY_EMPTY;
-      }
+      const char * cmd = root["cmd"];
 
-      serial_buff = "";
-      serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"on\":";
-      serial_buff += (relay_state == true)?"true":"false";
-      serial_buff += "}";
+      if(strcmp(cmd, "set") == 0){
+        const char * state = root["state"];
 
-      Serial.print(serial_buff);
+        if(strcmp(state, "full") == 0){
+          energy = ENERGY_FULL;
+        }
+        else if(strcmp(state, "empty") == 0){
+          energy = ENERGY_EMPTY;
+        }
+
+        serial_buff = "";
+        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += "}";
+
+        Serial.print(serial_buff);
+      }
     }
     else if(strcmp(op, "clock") == 0){
-      bool set = root["set"];
-      if(set){
+      const char * cmd = root["cmd"];
+
+      if(strcmp(cmd, "set") == 0){
         struct time set_time;
         uint8_t index;
 
@@ -194,7 +210,8 @@ void prosesData(){
         // serial_buff = "{\"op\":\"clock\",\"time\":\"" + String(set_time.hour, DEC) + ":" + String(set_time.minute, DEC) + "\"}";
 
         Serial.print(serial_buff);
-      }else{
+      }
+      else if(strcmp(cmd,"get") == 0){
         serial_buff = "";
         serial_buff = "{\"op\":\"clock\",\"time\":\"" + String(time_now.hour, DEC) + ":" + String(time_now.minute, DEC) + "\"}";
 
@@ -202,8 +219,23 @@ void prosesData(){
       }
     }
     else if(strcmp(op,"schedule") == 0){
-      bool set = root["set"];
-      if(set){
+      const char * cmd = root["cmd"];
+
+      if(strcmp(cmd, "delete") == 0){
+        uint8_t id;
+
+        if(id == 0){
+          resetScheduleAll();
+        }else{
+          deleteSchedule(id);
+        }
+
+        serial_buff = "";
+        serial_buff = "{\"op\":\"schedule\",\"id\":" + String(id, DEC) + "}";
+
+        Serial.print(serial_buff);
+      }
+      else if(strcmp(cmd, "set") == 0){
         struct schedule set_schedule;
         uint8_t index;
         uint8_t id;
@@ -227,46 +259,68 @@ void prosesData(){
         // serial_buff = "{\"op\":\"schedule\",\"finish\":\"" + String(set_schedule.finish_hour, DEC) + ":" + String(set_schedule.finish_minute, DEC) + "\"}";
         
         Serial.print(serial_buff);
-      }else{
-        uint8_t last_id;
+      }
+      else if(strcmp(cmd, "get") == 0){
+        uint8_t id = root["id"];
 
-        serial_buff = "";
-        serial_buff = "[";
+        if(id == 0){          // get all schedule
+          uint8_t last_id;
 
-        /*** get first schedule ****/
-        for(uint8_t i=1; i<11; i++){
+          serial_buff = "";
+          serial_buff = "[";
+
+          /*** get first schedule ****/
+          for(uint8_t i=1; i<11; i++){
+            struct get_schedule first_schedule;
+
+            last_id = i;
+
+            first_schedule = getSchedule(i);
+            if(first_schedule.success){
+              serial_buff += "{\"id\":"; 
+              serial_buff += String(i); 
+              serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
+              serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
+              serial_buff += "\"}";
+              
+              break;
+            }
+          }
+
+          for(uint8_t i=(last_id+1); i<11; i++){
+            struct get_schedule first_schedule;
+
+            first_schedule = getSchedule(i);
+            if(first_schedule.success){
+              serial_buff += "{\"id\":" + String(i, DEC); 
+              serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
+              serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
+              serial_buff += "\"}";
+            }
+          }
+
+          serial_buff += "]";
+          Serial.print(serial_buff);
+          serial_buff = "";
+        }
+        else{
+          serial_buff = "";
+
           struct get_schedule first_schedule;
 
-          last_id = i;
-
-          first_schedule = getSchedule(i);
+          first_schedule = getSchedule(id);
           if(first_schedule.success){
-            serial_buff += "{\"id\":"; 
-            serial_buff += String(i); 
+            serial_buff += "{\"id\":" + String(id, DEC); 
             serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
             serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
             serial_buff += "\"}";
-            
-            break;
+          }else{
+            serial_buff = "{}";
           }
+
+          Serial.print(serial_buff);
+          serial_buff = "";
         }
-
-        for(uint8_t i=last_id+1; i<11; i++){
-          struct get_schedule first_schedule;
-
-          if(first_schedule.success){
-            Serial.println(i);
-            serial_buff += "{\"id\":" + String(i, DEC); 
-            serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
-            serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
-            serial_buff += "\"}";
-          }
-        }
-
-        serial_buff += "]";
-        Serial.println(serial_buff.length());
-        Serial.print(serial_buff);
-        serial_buff = "";
       }
     }
   }
@@ -435,6 +489,22 @@ uint32_t getScheduleFlag(){
   return flag;
 }
 
+void deleteSchedule(uint8_t id){
+  uint32_t get_flag;
+  uint32_t set_flag = 0x00000001;
+  uint32_t not_flag;
+
+  for(uint8_t i=0; i<(id-1); i++){
+    set_flag <<=1;
+  }
+  not_flag = ~set_flag;
+
+  get_flag = getScheduleFlag();
+  get_flag &= not_flag;
+
+  setScheduleFlag(get_flag);
+}
+
 
 /******* Serial Interrupt Event Callback ********/
 void serialEvent(){
@@ -455,8 +525,8 @@ void serialEvent(){
 
 /****** Relay function*******/
 void relayState(bool state){
-  if(state){  digitalWrite(RELAY1_PIN, HIGH);  }
-  else{       digitalWrite(RELAY1_PIN, LOW);   }
+  if(state){  digitalWrite(RELAY1_PIN, LOW);  }
+  else{       digitalWrite(RELAY1_PIN, HIGH);   }
   relay_state = state;
 }
 
