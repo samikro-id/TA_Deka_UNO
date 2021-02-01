@@ -334,9 +334,11 @@ void prosesData(){
 void setClock(struct time set){
   clock.setClockMode(false);    // set to 24h
 
-  clock.setHour(set.hour);
-  clock.setMinute(set.minute);
-  clock.setSecond(set.second);
+  if(time_now.hour != set.hour || time_now.minute != set.minute){
+    clock.setHour(set.hour);
+    clock.setMinute(set.minute);
+    clock.setSecond(set.second);
+  }
 }
 
 struct time getClock(){
