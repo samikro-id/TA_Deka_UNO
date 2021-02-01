@@ -147,8 +147,9 @@ void prosesData(){
 
       if(strcmp(cmd, "get") == 0){
         serial_buff = "";
-        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
 
         Serial.print(serial_buff);
@@ -161,8 +162,9 @@ void prosesData(){
         relayState(root["state"]);
 
         serial_buff = "";
-        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
         
         Serial.print(serial_buff);
@@ -182,8 +184,9 @@ void prosesData(){
         }
 
         serial_buff = "";
-        serial_buff = "{\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
+        serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
 
         Serial.print(serial_buff);
@@ -199,7 +202,7 @@ void prosesData(){
         const char *get_clock = root["time"];
 
         index = String(get_clock).indexOf(':');  
-        set_time.hour = String(get_clock).substring(0, index).toInt();   
+        set_time.hour = String(get_clock).substring(0, index).toInt();
         set_time.minute = String(get_clock).substring(index+1).toInt();
 
         setClock(set_time);
