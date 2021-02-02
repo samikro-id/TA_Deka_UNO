@@ -256,10 +256,7 @@ void prosesData(){
         id = setSchedule(set_schedule);
 
         serial_buff = "";
-        serial_buff = "{\"op\":\"schedule\",\"id\":" + String(id, DEC) + "}";
-        // serial_buff = "{\"op\":\"schedule\",\"start\":\"" + String(set_schedule.start_hour, DEC) + ":" + String(set_schedule.start_minute, DEC) + "\"}";
-        // Serial.print(serial_buff);
-        // serial_buff = "{\"op\":\"schedule\",\"finish\":\"" + String(set_schedule.finish_hour, DEC) + ":" + String(set_schedule.finish_minute, DEC) + "\"}";
+        serial_buff = "{\"op\":\"schedule\",\"cmd\":\"set\",\"id\":" + String(id, DEC) + "}";
         
         Serial.print(serial_buff);
       }
@@ -269,7 +266,7 @@ void prosesData(){
         if(id == 0){          // get all schedule
           uint8_t last_id;
 
-          serial_buff = "";
+          serial_buff = "{\"op\":\"schedule\",\"cmd\":\"getAll\",\"data\":";
           serial_buff = "[";
 
           /*** get first schedule ****/
@@ -302,7 +299,7 @@ void prosesData(){
             }
           }
 
-          serial_buff += "]";
+          serial_buff += "]}";
           Serial.print(serial_buff);
           serial_buff = "";
         }
@@ -313,7 +310,7 @@ void prosesData(){
 
           first_schedule = getSchedule(id);
           if(first_schedule.success){
-            serial_buff += "{\"id\":" + String(id, DEC); 
+            serial_buff += "{\"op\":\"schedule\",\"cmd\":\"get\",\"id\":" + String(id, DEC); 
             serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
             serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
             serial_buff += "\"}";
@@ -568,56 +565,61 @@ void initIo(){
 }
 
 /* data schedule example
-[
-  {
-    "id":1,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":2,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":3,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":4,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":5,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":6,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":7,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":8,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":9,
-    "start":"255:255",
-    "finish":"255:255"
-  },
-  {
-    "id":10,
-    "start":"255:255",
-    "finish":"255:255"
-  }
-]
+{
+  "op":"schedule",
+  "cmd":"getAll",
+  "data":
+  [
+    {
+      "id":1,
+      "start":"1:1",
+      "finish":"2:2"
+    },
+    {
+      "id":2,
+      "start":"2:2",
+      "finish":"3:3"
+    },
+    {
+      "id":3,
+      "start":"3:3",
+      "finish":"4:4"
+    },
+    {
+      "id":4,
+      "start":"4:4",
+      "finish":"5:5"
+    },
+    {
+      "id":5,
+      "start":"5:5",
+      "finish":"6:6"
+    },
+    {
+      "id":6,
+      "start":"6:6",
+      "finish":"7:7"
+    },
+    {
+      "id":7,
+      "start":"7:7",
+      "finish":"8:8"
+    },
+    {
+      "id":8,
+      "start":"8:8",
+      "finish":"9:9"
+    },
+    {
+      "id":9,
+      "start":"9:9",
+      "finish":"10:10"
+    },
+    {
+      "id":10,
+      "start":"10:10",
+      "finish":"11:11"
+    }
+  ]
+}
 */
