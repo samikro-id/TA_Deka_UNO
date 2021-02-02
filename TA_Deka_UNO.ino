@@ -46,6 +46,7 @@ bool PM;
 String serial_buff;
 bool serial_complete    = false;
 
+#define SCHEDULE_MAX    9
 struct schedule{
   uint8_t start_hour;
   uint8_t start_minute;
@@ -225,7 +226,7 @@ void prosesData(){
       const char * cmd = root["cmd"];
 
       if(strcmp(cmd, "delete") == 0){
-        uint8_t id;
+        uint8_t id = root["id"];
 
         if(id == 0){
           resetScheduleAll();
@@ -234,7 +235,7 @@ void prosesData(){
         }
 
         serial_buff = "";
-        serial_buff = "{\"op\":\"schedule\",\"id\":" + String(id, DEC) + "}";
+        serial_buff = "{\"op\":\"schedule\",\"cmd\":\"delete\",\"id\":" + String(id, DEC) + "}";
 
         Serial.print(serial_buff);
       }
@@ -264,35 +265,25 @@ void prosesData(){
         uint8_t id = root["id"];
 
         if(id == 0){          // get all schedule
-          uint8_t last_id;
+          bool first = false;
 
           serial_buff = "{\"op\":\"schedule\",\"cmd\":\"getAll\",\"data\":";
-          serial_buff = "[";
+          serial_buff += "[";
 
           /*** get first schedule ****/
-          for(uint8_t i=1; i<11; i++){
+          for(uint8_t i=1; i<=SCHEDULE_MAX; i++){
             struct get_schedule first_schedule;
-
-            last_id = i;
 
             first_schedule = getSchedule(i);
             if(first_schedule.success){
+              if(!first){
+                first = true;
+              }else{
+                serial_buff += ",";
+              }
+
               serial_buff += "{\"id\":"; 
               serial_buff += String(i); 
-              serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
-              serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
-              serial_buff += "\"}";
-              
-              break;
-            }
-          }
-
-          for(uint8_t i=(last_id+1); i<11; i++){
-            struct get_schedule first_schedule;
-
-            first_schedule = getSchedule(i);
-            if(first_schedule.success){
-              serial_buff += "{\"id\":" + String(i, DEC); 
               serial_buff += ",\"start\":\"" + String(first_schedule.start_hour, DEC) + ":" + String(first_schedule.start_minute, DEC);
               serial_buff += "\",\"finish\":\"" + String(first_schedule.finish_hour, DEC) + ":" + String(first_schedule.finish_minute, DEC);
               serial_buff += "\"}";
@@ -388,7 +379,7 @@ byte i2c_eeprom_read_byte( int deviceaddress, unsigned int eeaddress ) {
 void checkSchedule(){
   struct get_schedule schedule_now;
 
-  for(uint8_t i=1; i<11; i++){
+  for(uint8_t i=1; i<=SCHEDULE_MAX; i++){
     schedule_now = getSchedule(i);
     if(schedule_now.success){
       if(schedule_now.start_hour == time_now.hour && schedule_now.start_minute == time_now.minute){
@@ -440,7 +431,7 @@ uint8_t setSchedule(struct schedule set_schedule){
   uint32_t flag;
   
   flag = getScheduleFlag();
-  for(uint8_t i=1; i<11; i++){
+  for(uint8_t i=1; i<=SCHEDULE_MAX; i++){
     if((flag & flag_begin) == 0){
       
       /*** set new flag ***/
@@ -622,4 +613,15 @@ void initIo(){
     }
   ]
 }
+
+{
+  "op":"schedule",
+  "cmd":"getAll",
+  "data":
+  [
+    {
+      "id":1,
+      "start":"4:40",
+      "finish":"4:41"
+      }{"id":2,"start":"5:15","finish":"5:25"}{"id":3,"start":"5:35","finish":"5:45"}{"id":4,"start":"5:55","finish":"6:5"}{"id":5,"start":"6:15","finish":"6:25"}{"id":6,"start":"6:35","finish":"6:45"}{"id":7,"start":"6:55","finish":"7:5"}{"id":8,"start":"7:15","finish":"7:25"}{"id":9,"start":"7:35","finish":"7:45"}{"id":10"}]}
 */
