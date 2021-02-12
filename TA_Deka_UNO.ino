@@ -19,8 +19,8 @@ bool led_state          = false;
 #define VOLT_EMPTY      10    // V      
 float volt;
 
-#define ARUS_SENSITIVITY  185   // mV  tegantung sensor arus yang digunakan, yang ini 5A
-#define ARUS_OFFSET       2.5   // V
+#define ARUS_SENSITIVITY  0.185 // V  tegantung sensor arus yang digunakan, yang ini 5A
+#define ARUS_OFFSET       2.5   // mV
 double arus;
 
 #define ENERGY_FULL     48
@@ -126,7 +126,7 @@ void bacaSensor(){
 
   /* BACA arus */
   uint16_t arusRaw = analogRead(ARUS_PIN);
-  double pinArus = 5000 * (arusRaw / 1024.0);
+  double pinArus = 5 * (arusRaw / 1024.0);
   arus = (float) ((pinArus - ARUS_OFFSET) / ARUS_SENSITIVITY);
 
   /* HITUNG ENERGY */
@@ -148,7 +148,7 @@ void prosesData(){
 
       if(strcmp(cmd, "get") == 0){
         serial_buff = "";
-        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 3) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
         serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
@@ -163,7 +163,7 @@ void prosesData(){
         relayState(root["state"]);
 
         serial_buff = "";
-        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 3) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
         serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
@@ -185,7 +185,7 @@ void prosesData(){
         }
 
         serial_buff = "";
-        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 2) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
+        serial_buff = "{\"op\":\"data\",\"tegangan\":" + String(volt, 1) +",\"arus\":"+ String(arus, 3) + ",\"energy\":" + String(energy, 2) + ",\"state\":";
         serial_buff += (relay_state == true)?"ON":"OFF";
         serial_buff += ",\"time\":\"" + String(time_now.hour) + ":" + String(time_now.minute) + "\"";
         serial_buff += "}";
