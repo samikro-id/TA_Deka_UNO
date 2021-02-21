@@ -15,13 +15,15 @@ bool relay_state        = false;
 uint32_t led_time;
 bool led_state          = false;
 
+#define SENSOR_LOOP     200
+
 #define VOLT_FULL       13    // V
 #define VOLT_EMPTY      10    // V      
 float volt;
 
 #define ARUS_SENSITIVITY  0.185 // V  tegantung sensor arus yang digunakan, yang ini 5A
 #define ARUS_OFFSET       2.5   // mV
-double arus;
+float arus;
 
 #define ENERGY_FULL     48
 #define ENERGY_EMPTY    0
@@ -82,7 +84,7 @@ void setup(){
 }
 
 void loop(){
-  if((millis() - sensor_time) > 200){
+  if((millis() - sensor_time) > 1000){
     bacaSensor();
     sensor_time = millis();
   }
@@ -111,10 +113,21 @@ void loop(){
 }
 
 void bacaSensor(){
-  /* BACA TEGANGAN */
-  uint16_t voltRaw = analogRead(TEGANGAN_PIN);      
-  float pinvolt = (float) (5 * voltRaw) / 1024;   
-  volt = (float) pinvolt * 5;
+  float pinvolt;
+  float pinArus;
+
+  for(uint8_t n=0; n<SENSOR_LOOP; n++){
+    uint16_t voltRaw = analogRead(TEGANGAN_PIN);      
+    pinvolt = (float) (5.0 * voltRaw) / 1024.0;  
+
+    uint16_t arusRaw = analogRead(ARUS_PIN);
+    pinArus = (float) (5.0 * arusRaw) / 1024.0;  
+  }
+  /* BACA TEGANGAN */   
+  volt = (float) (pinvolt / SENSOR_LOOP) * 5;
+
+  /* BACA arus */
+  arus = (float) ((pinArus / SENSOR_LOOP) - ARUS_OFFSET) / ARUS_SENSITIVITY;
 
   /* HITUNG PERSEN */
   if(volt > VOLT_EMPTY && volt < VOLT_FULL ){
@@ -124,16 +137,13 @@ void bacaSensor(){
     persen = 0;
   }
 
-  /* BACA arus */
-  uint16_t arusRaw = analogRead(ARUS_PIN);
-  double pinArus = 5 * (arusRaw / 1024.0);
-  arus = (float) ((pinArus - ARUS_OFFSET) / ARUS_SENSITIVITY);
-
   /* HITUNG ENERGY */
-  energy += float((volt * arus) / 3600);         // 3600 detik dalam 1 jam
+  energy += float((volt * arus) / 3600);        // 3600 detik dalam 1 jam
   if(energy > ENERGY_FULL){    energy = ENERGY_FULL;  }
   if(energy <= ENERGY_EMPTY){  energy = ENERGY_EMPTY; }
 
+  if(volt >= VOLT_FULL){    energy = ENERGY_FULL;   }
+  if(volt <= VOLT_EMPTY){   energy = ENERGY_EMPTY;  }
 }
 
 void prosesData(){
