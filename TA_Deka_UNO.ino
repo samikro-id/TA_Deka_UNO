@@ -6,7 +6,7 @@
 #define EEPROM_ADDRESS  0x57
 
 #define TEGANGAN_PIN    A0
-#define ARUS_PIN        A1
+#define ARUS_PIN        A2
 
 #define RELAY1_PIN      8
 #define RELAY2_PIN      9
@@ -17,8 +17,8 @@ bool led_state          = false;
 
 #define SENSOR_LOOP     200
 
-#define VOLT_FULL       13    // V
-#define VOLT_EMPTY      10    // V      
+#define VOLT_FULL       13.5    // V
+#define VOLT_EMPTY      10.5    // V      
 float volt;
 
 #define ARUS_SENSITIVITY  0.185 // V  tegantung sensor arus yang digunakan, yang ini 5A
