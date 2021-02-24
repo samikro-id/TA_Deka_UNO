@@ -113,15 +113,15 @@ void loop(){
 }
 
 void bacaSensor(){
-  float pinvolt;
-  float pinArus;
+  float pinvolt=0;
+  float pinArus=0;
 
   for(uint8_t n=0; n<SENSOR_LOOP; n++){
     uint16_t voltRaw = analogRead(TEGANGAN_PIN);      
-    pinvolt = (float) (5.0 * voltRaw) / 1024.0;  
+    pinvolt += (float) (5.0 * voltRaw) / 1024.0;  
 
     uint16_t arusRaw = analogRead(ARUS_PIN);
-    pinArus = (float) (5.0 * arusRaw) / 1024.0;  
+    pinArus += (float) (5.0 * arusRaw) / 1024.0;  
   }
   /* BACA TEGANGAN */   
   volt = (float) (pinvolt / SENSOR_LOOP) * 5;
