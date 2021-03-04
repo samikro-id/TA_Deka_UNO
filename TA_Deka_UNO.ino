@@ -25,7 +25,7 @@ float volt;
 #define ARUS_OFFSET       2.5   // mV
 float arus;
 
-#define ENERGY_FULL     48
+#define ENERGY_FULL     90
 #define ENERGY_EMPTY    0
 float energy = 0;
 
