@@ -635,5 +635,11 @@ void initIo(){
       "id":1,
       "start":"4:40",
       "finish":"4:41"
-      }{"id":2,"start":"5:15","finish":"5:25"}{"id":3,"start":"5:35","finish":"5:45"}{"id":4,"start":"5:55","finish":"6:5"}{"id":5,"start":"6:15","finish":"6:25"}{"id":6,"start":"6:35","finish":"6:45"}{"id":7,"start":"6:55","finish":"7:5"}{"id":8,"start":"7:15","finish":"7:25"}{"id":9,"start":"7:35","finish":"7:45"}{"id":10"}]}
+      }{"id":2,"start":"5:15","finish":"5:25"}{"id":3,"start":"5:35","finish":"5:45"}{"id":4,"start":"5:55","finish":"6:5"}{"id":5,"start":"6:15","finish":"6:25"}{"id":6,"start":"6:35","finish":"6:45"}{"id":7,"start":"6:55","finish":"7:5"}{"id":8,"start":"7:15","finish":"7:25"}{"id":9,"start":"7:35","finish":"7:45"}{"id":10"}]
+  }
+
+  https://api.thingspeak.com/channels/1289348/charts/1?yaxismin=0&days=1&height=0&width=0
+  https://api.thingspeak.com/channels/1289348/charts/2?yaxismin=-2&yaxismax=2&days=1&height=0&width=0
+  https://api.thingspeak.com/channels/1289348/charts/3?yaxismin=0&days=1&height=0&width=0
+  https://api.thingspeak.com/channels/1289348/charts/4?yaxismin=0&days=1&height=0&width=0
 */
