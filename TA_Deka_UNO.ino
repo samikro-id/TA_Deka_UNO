@@ -15,7 +15,7 @@ bool relay_state        = false;
 uint32_t led_time;
 bool led_state          = false;
 
-#define SENSOR_LOOP     200
+#define SENSOR_LOOP     10
 
 #define VOLT_FULL       13.5    // V
 #define VOLT_EMPTY      10.5    // V      
